@@ -1,6 +1,6 @@
 # Danh Sách Tính Năng Cho Website Social App + Ecommerce
 
-Danh sách này bao gồm các tính năng từ cơ bản đến nâng cao cho một nền tảng kết hợp mạng xã hội và thương mại điện tử, xây dựng bằng Laravel, có khả năng xử lý từ vài nghìn đến chục nghìn người dùng đồng thời. Các tính năng được chia thành các nhóm: Quản lý người dùng, Mạng xã hội, Thương mại điện tử, Quản trị & Bảo mật, Hiệu suất & Mở rộng. Đã cập nhật thêm các tính năng như mở rộng livestream (comment, quà, tương tác), video call, voice call, mini game, và mở rộng bảo mật.
+Danh sách này bao gồm các tính năng từ cơ bản đến nâng cao cho một nền tảng kết hợp mạng xã hội và thương mại điện tử, xây dựng bằng Laravel, có khả năng xử lý từ vài nghìn đến chục nghìn người dùng đồng thời. Các tính năng được chia thành các nhóm: Quản lý người dùng, Mạng xã hội, Thương mại điện tử, Quản trị & Bảo mật, Hiệu suất & Mở rộng. Đã cập nhật thêm các tính năng như mở rộng livestream (comment, quà, tương tác), video call, voice call, mini game, mở rộng bảo mật, và tích hợp API cho người bán.
 
 ## 1. Quản Lý Người Dùng (User Management)
 
@@ -50,6 +50,7 @@ Danh sách này bao gồm các tính năng từ cơ bản đến nâng cao cho m
 | Inventory Management | Quản lý kho, cảnh báo tồn kho thấp. |
 | Shipping Integration | Tích hợp đơn vị vận chuyển (GHN, GHTK), tính phí vận chuyển. |
 | Analytics Bán Hàng | Báo cáo doanh thu, sản phẩm bán chạy, hành vi người dùng. |
+| Tích hợp API cho Người Bán | Cung cấp APIs (RESTful/GraphQL) cho người bán để quản lý cửa hàng, sản phẩm, đơn hàng, tích hợp với hệ thống bên thứ ba (ví dụ: ERP, CRM), hỗ trợ webhook cho sự kiện realtime. |
 
 ## 4. Tính Năng Quản Trị Và Bảo Mật (Admin & Security)
 
@@ -81,7 +82,7 @@ Danh sách này bao gồm các tính năng từ cơ bản đến nâng cao cho m
 | Mobile Integration | Cung cấp APIs cho ứng dụng iOS/Android. |
 
 ## Ghi Chú
-- **Tech Stack Gợi Ý**: Laravel (backend), Vue.js/React (frontend), MySQL/PostgreSQL (database), Redis (cache), Laravel Queue/Horizon (background jobs), Elasticsearch (search), AWS S3/CDN (media). Đối với video/voice call: Integrate WebRTC hoặc third-party như Twilio/Agora. Đối với mini games: Sử dụng Phaser.js hoặc Unity WebGL.
+- **Tech Stack Gợi Ý**: Laravel (backend), Vue.js/React (frontend), MySQL/PostgreSQL (database), Redis (cache), Laravel Queue/Horizon (background jobs), Elasticsearch (search), AWS S3/CDN (media). Đối với video/voice call: Integrate WebRTC hoặc third-party như Twilio/Agora. Đối với mini games: Sử dụng Phaser.js hoặc Unity WebGL. Đối với API: Sử dụng Laravel Sanctum cho auth, Lighthouse cho GraphQL nếu cần.
 - **Scalability**: Sử dụng load balancer, auto-scaling trên AWS, và tối ưu database để hỗ trợ vài nghìn đến chục nghìn người dùng đồng thời.
 - **MVP (Minimum Viable Product)**: Bắt đầu với đăng ký/đăng nhập, đăng bài, giỏ hàng, thanh toán cơ bản.
 - **Testing**: Sử dụng PHPUnit (unit tests), Laravel Dusk (browser tests).
