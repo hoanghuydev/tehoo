@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+  # Laravel PHP-FPM
+  laravel-app:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+    container_name: laravel-app
+    working_dir: /workspace/backend
+    volumes:
+      - ..:/workspace
+      - /workspace/backend/vendor
+    networks:
+      - app-network
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - ../backend/.env
+    environment:
+      - XDEBUG_CONFIG=client_host=host.docker.internal
+
+  # Next.js app
+  nextjs-app:
+    build:
+      context: ../frontend
+      dockerfile: ../.devcontainer/docker/frontend/Dockerfile
+    container_name: nextjs-app
+    working_dir: /workspace/frontend
+    volumes:
+      - ..:/workspace
+      - /workspace/frontend/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    env_file:
+      - ../frontend/.env.local
+    environment:
+      - NODE_ENV=development
+
+  # Nginx web server
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ..:/workspace
+      - ./docker/backend/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - app-network
+    depends_on:
+      - laravel-app
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+      MYSQL_USER: ${DB_USERNAME:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  # Redis
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:

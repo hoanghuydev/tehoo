@@ -1,0 +1,27 @@
+{
+  "name": "Tehoo",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "laravel-app",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "runServices": ["laravel-app", "nextjs-app", "db", "redis", "nginx"],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "onecentlin.laravel-blade",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-vscode.sublime-keybindings"
+      ]
+    }
+  },
+  "forwardPorts": [8080, 9000, 3306, 6379],
+  "postCreateCommand": "composer install --working-dir=/workspace/backend && php artisan key:generate --working-dir=/workspace/backend && npm install --working-dir=/workspace/frontend",
+  "remoteUser": "root"
+}
