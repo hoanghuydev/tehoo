@@ -12,9 +12,6 @@ COPY package.json package-lock.json* ./
 # Cài deps
 RUN npm install
 
-# Copy toàn bộ code frontend
-COPY . .
-
 # Expose port Next.js
 EXPOSE 3000
 

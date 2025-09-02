@@ -21,7 +21,7 @@
       ]
     }
   },
-  "forwardPorts": [8080, 9000, 3000, 3306, 6379],
-  "postCreateCommand": "composer install --working-dir=/workspace/backend && php artisan key:generate --working-dir=/workspace/backend",
+  "forwardPorts": [8080, 9000, 3306, 6379],
+  "postCreateCommand": "composer install --working-dir=/workspace/backend && php artisan key:generate --working-dir=/workspace/backend && npm install --working-dir=/workspace/frontend",
   "remoteUser": "root"
 }
