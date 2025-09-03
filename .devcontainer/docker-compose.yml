@@ -61,6 +61,8 @@ services:
     restart: unless-stopped
     ports:
       - "3306:3306"
+    env_file:
+      - ../backend/.env
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-laravel}
       MYSQL_USER: ${DB_USERNAME:-user}

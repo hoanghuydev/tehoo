@@ -46,4 +46,22 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Post relationship
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    // Explicit child binding for nested routes like users/{user}/posts/{post}
+    public function resolveChildRouteBinding($childType, $value, $field)
+    {
+        if ($childType === 'post') {
+            return $this->posts()->active()
+                        ->where($field ?? 'id', $value)
+                        ->where('is_active', true)
+                        ->firstOrFail();
+        }
+        return parent::resolveChildRouteBinding($childType, $value, $field);
+    }
 }

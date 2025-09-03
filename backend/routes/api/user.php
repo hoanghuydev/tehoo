@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 // Basic Route
@@ -50,5 +51,7 @@ Route::get('/test-name-2',function(){
 });
 
 
-
-
+// Explicit Binding
+Route::get('/user/{userId}', function(User $user){
+    return response()->json(['message' => 'User', 'user' => $user]);
+});

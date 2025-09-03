@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('content');
+            $table->string('slug')->unique();
+            $table->foreignId('user_id')->constrained('users');
+            $table->boolean('is_active')->default(true);
+            $table->enum('category', ['tech', 'science', 'health'])->default('tech');
             $table->timestamps();
         });
     }
