@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'test' => TestMiddleware::class,
         ]);
+        $middleware->throttleWithRedis();
         // $middleware->append(TestMiddleware::class); // prepend
     })
     ->withExceptions(function (Exceptions $exceptions): void {
