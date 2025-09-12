@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckThirtyApiToken;
+use App\Http\Middleware\FormatApiResponse;
 use App\Http\Middleware\TestMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'test' => TestMiddleware::class,
+            'checkThirtyApiToken' => CheckThirtyApiToken::class,
+        ]);
+        $middleware->prepend(FormatApiResponse::class);
+        $middleware->group('api',[
+            'throttle:api',
+            FormatApiResponse::class            
         ]);
         $middleware->throttleWithRedis();
         // $middleware->append(TestMiddleware::class); // prepend

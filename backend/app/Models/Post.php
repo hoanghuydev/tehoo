@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use Illuminate\Contracts\Database\Query\Builder;
 
+/**
+ * @property-read User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Post active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Post newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Post newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Post query()
+ * @mixin \Eloquent
+ */
 class Post extends Model
 {
     //

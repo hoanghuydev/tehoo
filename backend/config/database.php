@@ -59,7 +59,24 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', true), // Connection pool persistent
+                PDO::ATTR_TIMEOUT => env('DB_TIMEOUT', 30), // Connection timeout
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'",
             ]) : [],
+            // Connection Pool Settings
+            'pool' => [
+                'min_connections' => env('DB_POOL_MIN', 5),
+                'max_connections' => env('DB_POOL_MAX', 20), 
+                'acquire_timeout' => env('DB_POOL_ACQUIRE_TIMEOUT', 10),
+                'timeout' => env('DB_POOL_TIMEOUT', 60),
+                'idle_timeout' => env('DB_POOL_IDLE_TIMEOUT', 300), // 5 phút
+                'max_lifetime' => env('DB_POOL_MAX_LIFETIME', 3600), // 1 giờ
+            ],
+            // MySQL Performance Settings
+            'sticky' => env('DB_STICKY', true),
+            'read_write_timeout' => env('DB_READ_WRITE_TIMEOUT', 60),
         ],
 
         'mariadb' => [
