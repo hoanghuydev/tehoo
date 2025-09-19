@@ -4,7 +4,7 @@
   "service": "laravel-app",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
-  "runServices": ["laravel-app", "nextjs-app", "db", "redis", "nginx"],
+  "runServices": ["laravel-app", "nextjs-app", "db", "redis", "nginx","kafka","kafka-ui"],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -21,7 +21,7 @@
       ]
     }
   },
-  "forwardPorts": [8080, 9000, 3306, 6379],
+  "forwardPorts": [8080, 9000, 3306, 6379, 9092, 8090],
   "postCreateCommand": "composer install --working-dir=/workspace/backend && php artisan key:generate --working-dir=/workspace/backend && npm install --working-dir=/workspace/frontend",
   "remoteUser": "root"
 }
