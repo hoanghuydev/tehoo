@@ -18,10 +18,24 @@ RUN apk add --no-cache \
     oniguruma-dev \
     bash \
     nodejs \
-    npm
+    npm \
+    librdkafka-dev \
+    autoconf \
+    gcc \
+    g++ \
+    make
 
 # Cài PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Cài rdkafka PHP extension
+RUN pecl install rdkafka \
+    && docker-php-ext-enable rdkafka
+
+# Cài Redis PHP extension
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+
 
 # Cài Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer

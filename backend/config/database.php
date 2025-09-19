@@ -59,7 +59,10 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_PERSISTENT => true, // Connection không bị hủy sau mỗi request
             ]) : [],
+            'sticky' => env('DB_STICKY', true),
+            'read_write_timeout' => env('DB_READ_WRITE_TIMEOUT', 60),
         ],
 
         'mariadb' => [

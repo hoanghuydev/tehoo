@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\FormatApiResponse;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -44,7 +45,7 @@ Route::middleware('test')->group(function(){
 Route::get('/test-name',function(){
     $test_url = route("users.test");
     return response()->json(['message' => 'Hello World', 'test_url' => $test_url]);
-});
+})->withoutMiddleware([FormatApiResponse::class,'throttle:api']);
 
 Route::get('/test-name-2',function(){
     return to_route("users.search",["search"=>"test-name","param"=>"hehe"]);
