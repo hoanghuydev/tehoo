@@ -7,7 +7,7 @@ use Junges\Kafka\Config\RebalanceStrategy;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
 
-class PostNotifyConsumer extends Command
+class Consumer extends Command
 {
     /**
      * The name and signature of the console command.
