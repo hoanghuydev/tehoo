@@ -26,15 +26,20 @@ services:
       dockerfile: ../.devcontainer/docker/frontend/Dockerfile
     container_name: nextjs-app
     working_dir: /workspace/frontend
+    ports:
+      - "3000:3000"
     volumes:
       - ..:/workspace
       - /workspace/frontend/node_modules
+      - /workspace/frontend/.next
     networks:
       - app-network
     env_file:
       - ../frontend/.env.local
     environment:
       - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
 
   # Nginx web server
   nginx:
@@ -108,6 +113,12 @@ services:
         aliases:
           - kafka
           - broker
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   kafka2:
     image: confluentinc/cp-kafka:latest
@@ -183,6 +194,152 @@ services:
     networks:
       - app-network
 
+  # Kafka Connect
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    container_name: kafka-connect
+    depends_on:
+      - kafka
+      - kafka2
+      - kafka3
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:9092,kafka2:9092,kafka3:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: connect-cluster
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+    volumes:
+      - kafka-connect-data:/tmp/kafka-logs
+    networks:
+      - app-network
+
+  # Mirror Maker 2
+  mirror-maker:
+    image: confluentinc/cp-kafka:latest
+    container_name: mirror-maker
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-backup:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092,kafka2:9092,kafka3:9092
+    volumes:
+      - ./docker/kafka/mm2.properties:/opt/mm2.properties
+      - mirror-maker-data:/tmp/kafka-logs
+    networks:
+      - app-network
+    command: >
+      bash -c "
+        # Function to check if Kafka cluster is fully ready
+        check_kafka_ready() {
+          local bootstrap_server=$$1
+          local cluster_name=$$2
+          echo 'Checking $$cluster_name cluster readiness...'
+          
+          # Check if we can list topics
+          if ! kafka-topics --bootstrap-server $$bootstrap_server --list > /dev/null 2>&1; then
+            return 1
+          fi
+          
+          # Check if we can create a test topic (and clean it up)
+          local test_topic=\"mm2-readiness-test-$$(date +%s)\"
+          if kafka-topics --bootstrap-server $$bootstrap_server --create --topic $$test_topic --partitions 1 --replication-factor 1 > /dev/null 2>&1; then
+            kafka-topics --bootstrap-server $$bootstrap_server --delete --topic $$test_topic > /dev/null 2>&1
+            return 0
+          fi
+          return 1
+        }
+        
+        # Wait for source Kafka cluster to be ready
+        echo 'Waiting for source Kafka cluster to be fully ready...'
+        retry_count=0
+        max_retries=60
+        while ! check_kafka_ready 'kafka:9092' 'source'; do
+          retry_count=$$((retry_count + 1))
+          if [ $$retry_count -ge $$max_retries ]; then
+            echo 'Source Kafka cluster failed to become ready after $$max_retries attempts'
+            exit 1
+          fi
+          echo 'Source Kafka cluster not ready (attempt $$retry_count/$$max_retries), waiting...'
+          sleep 10
+        done
+        echo 'Source Kafka cluster is fully ready!'
+        
+        # Wait for backup Kafka broker to be ready
+        echo 'Waiting for backup Kafka broker to be fully ready...'
+        retry_count=0
+        while ! check_kafka_ready 'kafka-backup:9092' 'backup'; do
+          retry_count=$$((retry_count + 1))
+          if [ $$retry_count -ge $$max_retries ]; then
+            echo 'Backup Kafka broker failed to become ready after $$max_retries attempts'
+            exit 1
+          fi
+          echo 'Backup Kafka broker not ready (attempt $$retry_count/$$max_retries), waiting...'
+          sleep 10
+        done
+        echo 'Backup Kafka broker is fully ready!'
+        
+        # Additional wait to ensure clusters are stable
+        echo 'Waiting additional 30 seconds for cluster stability...'
+        sleep 30
+        
+        echo 'Starting Mirror Maker 2...'
+        # Start Mirror Maker 2
+        connect-mirror-maker /opt/mm2.properties
+      "
+
+  # Backup Kafka Broker (Target for Mirror Maker)
+  kafka-backup:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-backup
+    hostname: kafka-backup
+    ports:
+      - "9098:9092"
+      - "9099:9093"
+    environment:
+      KAFKA_NODE_ID: 100
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 100@kafka-backup:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-backup:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      CLUSTER_ID: "BackupClusterID123456"
+    volumes:
+      - kafka-backup-data:/var/lib/kafka/data
+    networks:
+      app-network:
+        aliases:
+          - kafka-backup
+          - backup-broker
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
 networks:
   app-network:
     driver: bridge
@@ -193,3 +350,6 @@ volumes:
   kafka-data:
   kafka2-data:
   kafka3-data:
+  kafka-connect-data:
+  mirror-maker-data:
+  kafka-backup-data:
